@@ -1,10 +1,7 @@
 from scapy.all import *
 from scapy.layers import http
-from scapy.layers.inet import IP, UDP, TCP
+from scapy.layers.inet import IP, TCP
 import sys
-import time
-import math
-
 
 def func(input_file, server_ip, server_port):
 
