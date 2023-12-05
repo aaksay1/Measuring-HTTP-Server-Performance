@@ -4,7 +4,7 @@ from scapy.layers.inet import IP, TCP
 import sys
 
 def func(input_file, server_ip, server_port):
-
+    
     latencies = []
 
     processed_file = rdpcap(input_file)
@@ -35,7 +35,7 @@ def func(input_file, server_ip, server_port):
             sorted_latencies[int(len(sorted_latencies) * 0.99)],
         ]
     
-    print(f"AVERAGE LATENCY: {average_latency:.5f} seconds")
+    print(f"AVERAGE LATENCY: {average_latency:.5f}")
     print(f"PERCENTILES: {percentiles[0]:.5f}, {percentiles[1]:.5f}, {percentiles[2]:.5f}, {percentiles[3]:.5f}, {percentiles[4]:.5f}")
 
 if __name__ == "__main__":
