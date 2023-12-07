@@ -6,23 +6,29 @@ import sys
 def func(input_file, server_ip, server_port):
     
     latencies = []
-
     processed_file = rdpcap(input_file)
-    http_requests = [pkt for pkt in processed_file if pkt.haslayer(http.HTTPRequest)
-                    and pkt[IP].dst == server_ip
-                    and pkt[TCP].dport == int(server_port)]
+
+    http_requests = []
+    for pkt in processed_file:
+        if(pkt.haslayer(http.HTTPRequest) and IP in pkt and pkt[IP].dst == server_ip and TCP in pkt and pkt[TCP].dport == int(server_port)):
+            http_requests.append(pkt)
     
-    http_responses = [pkt for pkt in processed_file if pkt.haslayer(http.HTTPResponse)
-                    and pkt[IP].src == server_ip
-                    and pkt[TCP].sport == int(server_port)]
+    http_responses = []
+    for pkt in processed_file:
+        if(pkt.haslayer(http.HTTPResponse) and IP in pkt and pkt[IP].src == server_ip and TCP in pkt and pkt[TCP].sport == int(server_port)):
+            http_responses.append(pkt)
     
     for request in http_requests:
-        response = next((pkt for pkt in http_responses if pkt[TCP].seq == request[TCP].ack), None)
-
+        response = None
+        for pkt in http_responses:
+            if(TCP in pkt and pkt[TCP].seq == request[TCP].ack):
+                response = pkt
+                break
+        
         if response:
-
             latency = response.time - request.time
             latencies.append(latency)
+
     
     if latencies:
         average_latency = sum(latencies) / len(latencies)

@@ -6,8 +6,6 @@
 # (c) 2023 R. P. Martin, GPL version 2
 
 from scapy.all import *
-from scapy.layers.inet import IP, UDP, TCP
-from scapy.layers import http
 import sys
 import time
 import math
@@ -33,8 +31,8 @@ for session in sessions:
             source_ip = packet[IP].src   # note that a packet is represented as a python hash table with keys corresponding to 
             dest_ip = packet[IP].dst     # layer field names and the values of the hash table as the packet field values
             
-            if (packet.haslayer(http)):
-                if http.HTTPRequest in packet:   
+            if (packet.haslayer(HTTP)):
+                if HTTPRequest in packet:   
                     arrival_time = packet.time
                     print ("Got a TCP packet part of an HTTP request at time: %0.4f for server IP %s" % (arrival_time,dest_ip))
                     packet.show()
