@@ -1,7 +1,10 @@
+import logging
+logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 from scapy.all import *
 from scapy.layers import http
 from scapy.layers.inet import IP, TCP
 import sys
+
 
 def func(input_file, server_ip, server_port):
     
