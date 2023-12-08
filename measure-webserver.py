@@ -6,9 +6,7 @@ from scapy.layers.inet import IP, TCP
 import sys
 
 
-def func(input_file, server_ip, server_port):
-    
-    latencies = []
+def measure_webserver(input_file, server_ip, server_port):
 
     processed_file = rdpcap(input_file)
 
@@ -34,6 +32,8 @@ def func(input_file, server_ip, server_port):
         ):
             http_responses.append(pkt)
 
+    latencies = []
+
     for request in http_requests:
         response = None
         for pkt in http_responses:
@@ -50,7 +50,7 @@ def func(input_file, server_ip, server_port):
             latencies.append(latency)
 
     if latencies:
-        average_latency = sum(latencies) / len(latencies)
+        average_latency = sum(latencies)/len(latencies)
         sorted_latencies = sorted(latencies)
         percentiles = [
             sorted_latencies[int(len(sorted_latencies) * 0.25)],
@@ -69,4 +69,4 @@ if __name__ == "__main__":
     server_ip = sys.argv[2]
     server_port = sys.argv[3]
 
-    func(input_file, server_ip, server_port)
+    measure_webserver(input_file, server_ip, server_port)
