@@ -4,64 +4,63 @@ from scapy.all import *
 from scapy.layers import http
 from scapy.layers.inet import IP, TCP
 import sys
+import math
+import numpy as np
+
+load_layer("http")
+latencies = []
+
+def get_avg():
+    return sum(latencies)/len(latencies)
+
+def percentile(q):
+
+    n = len(latencies)
+    index = min(int(n * q), n - 1)
+    return latencies[index]
+
+def calculate_percentiles():
+    percents = []
+    latencies.sort()
+    percents.append(percentile(0.25))
+    percents.append(percentile(0.50))
+    percents.append(percentile(0.75))
+    percents.append(percentile(0.95))
+    percents.append(percentile(0.99))
+    return percents
 
 
 def measure_webserver(input_file, server_ip, server_port):
 
     processed_file = rdpcap(input_file)
+    reqs = []
+    responses = []
 
-    http_requests = []
-    for pkt in processed_file:
-        if (
-            pkt.haslayer(http.HTTPRequest)
-            and IP in pkt
-            and hasattr(pkt[IP], 'dst') and pkt[IP].dst == server_ip
-            and TCP in pkt
-            and hasattr(pkt[TCP], 'dport') and pkt[TCP].dport == int(server_port)
-        ):
-            http_requests.append(pkt)
+    for packet in processed_file:
 
-    http_responses = []
-    for pkt in processed_file:
-        if (
-            pkt.haslayer(http.HTTPResponse)
-            and IP in pkt
-            and hasattr(pkt[IP], 'src') and pkt[IP].src == server_ip
-            and TCP in pkt
-            and hasattr(pkt[TCP], 'sport') and pkt[TCP].sport == int(server_port)
-        ):
-            http_responses.append(pkt)
+        if(packet.haslayer(IP) and packet.haslayer(TCP)):
 
-    latencies = []
+            if(packet.haslayer(http.HTTPRequest) and hasattr(packet[IP], 'dst') and packet[IP].dst == server_ip and hasattr(packet[TCP], 'dport') and packet[TCP].dport == int(server_port)):
+                reqs.append(packet)
+            if(packet.haslayer(http.HTTPResponse)and hasattr(packet[IP], 'src') and packet[IP].src == server_ip and hasattr(packet[TCP], 'sport') and packet[TCP].sport == int(server_port)):
+                responses.append(packet)
 
-    for request in http_requests:
-        response = None
-        for pkt in http_responses:
-            if (
-                TCP in pkt
-                and hasattr(pkt[TCP], 'seq') and hasattr(request[TCP], 'ack')
-                and pkt[TCP].seq == request[TCP].ack
-            ):
-                response = pkt
+
+    for request in reqs:
+        response = 0
+        for packet in responses:
+            if (packet.haslayer(TCP) and hasattr(packet[TCP], 'seq') and hasattr(request[TCP], 'ack') and packet[TCP].seq == request[TCP].ack):
+                response = packet
                 break
 
-        if response:
-            latency = response.time - request.time
-            latencies.append(latency)
+        if response != 0:
+            latencies.append(response.time - request.time)
 
-    if latencies:
-        average_latency = sum(latencies)/len(latencies)
-        sorted_latencies = sorted(latencies)
-        percentiles = [
-            sorted_latencies[int(len(sorted_latencies) * 0.25)],
-            sorted_latencies[int(len(sorted_latencies) * 0.50)],
-            sorted_latencies[int(len(sorted_latencies) * 0.75)],
-            sorted_latencies[int(len(sorted_latencies) * 0.95)],
-            sorted_latencies[int(len(sorted_latencies) * 0.99)],
-        ]
+    if(len(latencies) != 0):
 
-        print(f"AVERAGE LATENCY: {average_latency:.5f}")
-        print(f"PERCENTILES: {percentiles[0]:.5f}, {percentiles[1]:.5f}, {percentiles[2]:.5f}, {percentiles[3]:.5f}, {percentiles[4]:.5f}")
+        print(f"AVERAGE LATENCY: {get_avg():.5f}")
+        print(f"PERCENTILES: {calculate_percentiles()[0]:.5f}, {calculate_percentiles()[1]:.5f}, {calculate_percentiles()[2]:.5f}, {calculate_percentiles()[3]:.5f}, {calculate_percentiles()[4]:.5f}")
+        #print(f"KL DIVERGENCE: {kl_div:.5f}")
 
 if __name__ == "__main__":
 
